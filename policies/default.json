@@ -1,0 +1,36 @@
+{
+  "version": "2.0.0",
+  "agentId": "*",
+  "transactionPolicies": [
+    {
+      "id": "conservative",
+      "description": "Conservative defaults for new agents — low limits, strict controls",
+      "type": "transaction",
+      "priority": 1,
+      "enabled": true,
+      "maxTransactionValue": 10,
+      "allowedTokens": [],
+      "blockedRecipients": [],
+      "whitelistedRecipients": [],
+      "rateLimit": {
+        "maxTransactions": 20,
+        "windowSeconds": 3600
+      },
+      "cooldownSeconds": 5,
+      "multiSigThreshold": 50
+    }
+  ],
+  "memoryPolicies": [
+    {
+      "id": "memory-injection-protection",
+      "description": "Blocks known memory injection patterns (CrAIBench-derived)",
+      "type": "memory",
+      "priority": 1,
+      "enabled": true,
+      "injectionPatterns": [],
+      "maxEntryLength": 10000,
+      "blockFinancialInstructions": true,
+      "blockSystemOverrides": true
+    }
+  ]
+}

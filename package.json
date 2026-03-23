@@ -1,0 +1,39 @@
+{
+  "name": "@agentshield/plugin",
+  "version": "0.1.0",
+  "description": "AI Agent Security & Guardrails for Solana — Memory injection protection, transaction policies, anomaly detection, and audit logging",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": ["dist", "README.md", "LICENSE"],
+  "scripts": {
+    "build": "tsup src/index.ts --format esm --dts --clean",
+    "dev": "tsup src/index.ts --format esm --dts --watch",
+    "test": "bun test",
+    "test:watch": "bun test --watch",
+    "test:coverage": "bun test --coverage",
+    "lint": "tsc --noEmit"
+  },
+  "keywords": [
+    "elizaos",
+    "solana",
+    "ai-agent",
+    "security",
+    "guardrails",
+    "memory-injection",
+    "agentshield",
+    "web3",
+    "policy-engine"
+  ],
+  "author": "AgentShield Team",
+  "license": "MIT",
+  "peerDependencies": {
+    "@elizaos/core": ">=0.2.0"
+  },
+  "devDependencies": {
+    "@elizaos/core": "^0.2.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.4.0",
+    "@types/bun": "latest"
+  }
+}
