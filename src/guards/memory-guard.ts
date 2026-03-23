@@ -37,7 +37,7 @@ const DEFAULT_INJECTION_PATTERNS: Array<{
     description: 'Direct financial instruction planted in memory',
   },
   {
-    pattern: /(?:the correct|the real|the actual|updated)\s+(?:wallet|address|recipient)\s+(?:is|should be|=)\s*/i,
+    pattern: /(?:the correct|the real|the actual|updated)\s+(?:wallet(?:\s+address)?|address|recipient)\s+(?:is|should be|=)\s*/i,
     type: 'injection',
     severity: 5,
     description: 'Wallet address override attempt',
@@ -76,7 +76,7 @@ const DEFAULT_INJECTION_PATTERNS: Array<{
   },
   // Data exfiltration
   {
-    pattern: /(?:share|send|post|leak|export)\s+(?:private key|seed phrase|mnemonic|secret|password)/i,
+    pattern: /(?:share|send|post|leak|export)\s+(?:\w+\s+){0,3}(?:private key|seed phrase|mnemonic|secret|password)/i,
     type: 'exfiltration',
     severity: 5,
     description: 'Credential exfiltration attempt',
