@@ -19,7 +19,7 @@
  *   plugins: [agentShieldPlugin]
  */
 
-import type { Plugin, Action, Provider, IAgentRuntime } from '@elizaos/core';
+import type { Plugin, Action, Provider, IAgentRuntime, ActionResult } from '@elizaos/core';
 import { PolicyEngine, DEFAULT_POLICY } from './policies/policy-engine.js';
 import { AnomalyDetector } from './monitors/anomaly-detector.js';
 import { AuditLogger } from './logging/audit-logger.js';
@@ -53,7 +53,9 @@ let config: AgentShieldConfig;
 // Injects security context into every agent interaction
 
 const securityProvider: Provider = {
-  get: async (runtime: IAgentRuntime, message: any, state: any) => {
+  name: 'agentshield-security',
+  description: 'Provides real-time security context and policy status for AgentShield',
+  get: async (runtime: IAgentRuntime, _message: unknown, _state: unknown) => {
     // Provide security context to the agent
     const agentId = runtime.agentId || 'unknown';
     const stats = auditLogger.getStats(agentId);
@@ -89,7 +91,7 @@ const validateMemoryAction: Action = {
   similes: ['check_memory', 'validate_memory', 'memory_guard'],
   description: 'Validates a memory entry against injection patterns before persistence',
 
-  validate: async (runtime: IAgentRuntime, message: any, state: any): Promise<boolean> => {
+  validate: async (_runtime: IAgentRuntime, _message: unknown, _state?: unknown): Promise<boolean> => {
     // Always active — this is a security guard, not an optional action
     return true;
   },
@@ -97,10 +99,10 @@ const validateMemoryAction: Action = {
   handler: async (
     runtime: IAgentRuntime,
     message: any,
-    state: any,
-    options: any,
-    callback: any,
-  ) => {
+    _state?: unknown,
+    _options?: unknown,
+    callback?: any,
+  ): Promise<ActionResult> => {
     const entry: MemoryEntry = {
       content: typeof message.content === 'string'
         ? message.content
@@ -134,7 +136,13 @@ const validateMemoryAction: Action = {
       });
     }
 
-    return result;
+    return {
+      success: result.decision === 'allow',
+      text: result.decision === 'allow'
+        ? 'Memory validated — no threats detected.'
+        : `Memory BLOCKED — ${result.evaluations.filter(e => e.decision === 'block').map(e => e.reason).join('; ')}`,
+      data: { agentshield: result },
+    };
   },
 
   examples: [
@@ -153,17 +161,17 @@ const validateTransactionAction: Action = {
   similes: ['check_transaction', 'validate_tx', 'transaction_guard', 'guard_tx'],
   description: 'Validates a Solana transaction against security policies before execution',
 
-  validate: async (runtime: IAgentRuntime, message: any, state: any): Promise<boolean> => {
+  validate: async (_runtime: IAgentRuntime, _message: unknown, _state?: unknown): Promise<boolean> => {
     return true;
   },
 
   handler: async (
     runtime: IAgentRuntime,
     message: any,
-    state: any,
-    options: any,
-    callback: any,
-  ) => {
+    _state?: unknown,
+    _options?: unknown,
+    callback?: any,
+  ): Promise<ActionResult> => {
     const txData = message.content?.data || message.content;
 
     const tx: TransactionRequest = {
@@ -228,8 +236,9 @@ const validateTransactionAction: Action = {
       console.log(`[AgentShield:TX] ${finalDecision} | ${(tx.amount / 1e9).toFixed(4)} SOL → ${tx.to.slice(0, 8)}... | anomalies: ${anomalies.length}`);
     }
 
+    const amountSol = (tx.amount / 1e9).toFixed(4);
+
     if (callback) {
-      const amountSol = (tx.amount / 1e9).toFixed(4);
       await callback({
         text: finalDecision === 'allow'
           ? `Transaction approved: ${amountSol} SOL`
@@ -238,7 +247,13 @@ const validateTransactionAction: Action = {
       });
     }
 
-    return { ...policyResult, decision: finalDecision };
+    return {
+      success: finalDecision === 'allow',
+      text: finalDecision === 'allow'
+        ? `Transaction approved: ${amountSol} SOL`
+        : `Transaction ${finalDecision.toUpperCase()}: ${policyResult.evaluations[0]?.reason || 'Policy violation'}`,
+      data: { agentshield: { ...policyResult, decision: finalDecision, anomalies } },
+    };
   },
 
   examples: [

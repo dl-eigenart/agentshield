@@ -5,7 +5,11 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "files": ["dist", "README.md", "LICENSE"],
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
     "dev": "tsup src/index.ts --format esm --dts --watch",
@@ -28,12 +32,11 @@
   "author": "AgentShield Team",
   "license": "MIT",
   "peerDependencies": {
-    "@elizaos/core": ">=0.2.0"
+    "@elizaos/core": ">=2.0.0-alpha.1"
   },
   "devDependencies": {
-    "@elizaos/core": "^0.2.0",
-    "tsup": "^8.0.0",
-    "typescript": "^5.4.0",
-    "@types/bun": "latest"
+    "@elizaos/core": "2.0.0-alpha.98",
+    "tsup": "^8.5.1",
+    "typescript": "^5.9.3"
   }
 }

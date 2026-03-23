@@ -151,7 +151,7 @@ export class AuditLogger {
     );
   }
 
-  private emitFile(event: AuditEvent): void {
+  private emitFile(_event: AuditEvent): void {
     // In a real implementation, this would append to a file
     // For now, we just track it in memory
     // TODO: Implement file writing with fs.appendFile
