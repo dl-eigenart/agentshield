@@ -257,6 +257,34 @@ export class MemoryGuard {
       });
     }
 
+    // Authority claim + action demand (social engineering / privilege escalation)
+    const authorityClaim = /(?:i am|i'm)\s+(?:the\s+)?(?:admin|administrator|developer|owner|creator|manager|operator|root)\b/i;
+    const authorityMatch = content.match(authorityClaim);
+    if (authorityMatch) {
+      // Only flag if combined with an action demand
+      const actionDemand = /(?:grant|give|override|unlock|disable|access|bypass|execute|transfer|withdraw)/i;
+      if (actionDemand.test(content)) {
+        threats.push({
+          type: 'override',
+          severity: 4,
+          matchedPattern: 'Authority claim with action demand (social engineering)',
+          suspiciousContent: authorityMatch[0],
+        });
+      }
+    }
+
+    // Direct access escalation requests
+    const accessEscalation = /(?:grant|give)\s+(?:me\s+)?(?:full\s+)?(?:access|control|permission|admin|root)/i;
+    const accessMatch = content.match(accessEscalation);
+    if (accessMatch) {
+      threats.push({
+        type: 'override',
+        severity: 4,
+        matchedPattern: 'Access escalation request',
+        suspiciousContent: accessMatch[0],
+      });
+    }
+
     return threats;
   }
 }
