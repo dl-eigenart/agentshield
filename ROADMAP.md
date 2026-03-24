@@ -210,8 +210,12 @@ Instructions (9 total):
 7. `force_lock` / `unlock` — Emergency circuit breaker control
 8. `update_limits` — Change per-tx and daily limits
 
+Devnet deployment:
+- ✅ Deployed to Solana Devnet — Program ID: `gURRDzQGXs7p4DrTt6dXPNFXHdwuK5u7WUHYobHMB1D`
+- ✅ 10/10 on-chain tests passing against Devnet
+- Deploy TX: `2QqVhXHtpDdSqfF7fdAWVP7zthKJDoT1DB3jY9RDFZ3rEwu1Vdbh4qG4KjYsgGSp5qUF6Adt4rvu1mUtbkKEJfFJ`
+
 Remaining:
-- 🔲 Devnet deployment (airdrop faucet currently rate-limited)
 - 🔲 Mainnet audit + deployment
 - 🔲 Multi-sig escalation for high-value operations
 
