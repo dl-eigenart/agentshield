@@ -1,0 +1,712 @@
+{
+  "address": "gURRDzQGXs7p4DrTt6dXPNFXHdwuK5u7WUHYobHMB1D",
+  "metadata": {
+    "name": "agentshield_guard",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Created with Anchor"
+  },
+  "instructions": [
+    {
+      "name": "add_to_allowlist",
+      "docs": [
+        "Add a wallet address to the allowlist."
+      ],
+      "discriminator": [
+        149,
+        143,
+        78,
+        134,
+        241,
+        244,
+        7,
+        56
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true
+        },
+        {
+          "name": "operator",
+          "signer": true,
+          "relations": [
+            "guard_config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "wallet",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "execute_transfer",
+      "docs": [
+        "Execute an approved transfer. Transfers SOL from agent to recipient."
+      ],
+      "discriminator": [
+        233,
+        126,
+        160,
+        184,
+        235,
+        206,
+        31,
+        119
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true,
+          "relations": [
+            "tx_request"
+          ]
+        },
+        {
+          "name": "tx_request",
+          "writable": true
+        },
+        {
+          "name": "agent",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "recipient",
+          "writable": true,
+          "relations": [
+            "tx_request"
+          ]
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "force_lock",
+      "docs": [
+        "Operator can force-lock the guard (emergency)."
+      ],
+      "discriminator": [
+        73,
+        234,
+        124,
+        20,
+        181,
+        80,
+        1,
+        158
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true
+        },
+        {
+          "name": "operator",
+          "signer": true,
+          "relations": [
+            "guard_config"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "initialize_guard",
+      "docs": [
+        "Initialize guard configuration for an agent.",
+        "Only the operator (deployer) can call this."
+      ],
+      "discriminator": [
+        63,
+        189,
+        246,
+        157,
+        77,
+        125,
+        157,
+        142
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  103,
+                  117,
+                  97,
+                  114,
+                  100
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "operator"
+              },
+              {
+                "kind": "arg",
+                "path": "agent_id"
+              }
+            ]
+          }
+        },
+        {
+          "name": "operator",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "agent_id",
+          "type": "string"
+        },
+        {
+          "name": "max_tx_lamports",
+          "type": "u64"
+        },
+        {
+          "name": "daily_limit_lamports",
+          "type": "u64"
+        },
+        {
+          "name": "circuit_breaker_threshold",
+          "type": "u8"
+        },
+        {
+          "name": "circuit_breaker_window_secs",
+          "type": "i64"
+        }
+      ]
+    },
+    {
+      "name": "oracle_approve",
+      "docs": [
+        "Oracle approves a pending request."
+      ],
+      "discriminator": [
+        245,
+        249,
+        219,
+        147,
+        184,
+        122,
+        225,
+        71
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true,
+          "relations": [
+            "tx_request"
+          ]
+        },
+        {
+          "name": "tx_request",
+          "writable": true
+        },
+        {
+          "name": "oracle",
+          "signer": true
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "oracle_deny",
+      "docs": [
+        "Oracle denies a pending request."
+      ],
+      "discriminator": [
+        152,
+        87,
+        85,
+        48,
+        53,
+        85,
+        213,
+        18
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true,
+          "relations": [
+            "tx_request"
+          ]
+        },
+        {
+          "name": "tx_request",
+          "writable": true
+        },
+        {
+          "name": "oracle",
+          "signer": true
+        }
+      ],
+      "args": [
+        {
+          "name": "reason",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "remove_from_allowlist",
+      "docs": [
+        "Remove a wallet address from the allowlist."
+      ],
+      "discriminator": [
+        45,
+        46,
+        214,
+        56,
+        189,
+        77,
+        242,
+        227
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true
+        },
+        {
+          "name": "operator",
+          "signer": true,
+          "relations": [
+            "guard_config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "wallet",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "set_oracle",
+      "docs": [
+        "Set the off-chain policy oracle that can approve/deny requests."
+      ],
+      "discriminator": [
+        186,
+        128,
+        81,
+        104,
+        74,
+        79,
+        18,
+        224
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true
+        },
+        {
+          "name": "operator",
+          "signer": true,
+          "relations": [
+            "guard_config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "oracle",
+          "type": "pubkey"
+        }
+      ]
+    },
+    {
+      "name": "submit_request",
+      "docs": [
+        "Submit a transaction request from the agent.",
+        "The agent signs this; the request enters a pending state",
+        "until approved by the oracle or auto-approved if within policy."
+      ],
+      "discriminator": [
+        122,
+        30,
+        180,
+        251,
+        206,
+        230,
+        254,
+        57
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true
+        },
+        {
+          "name": "tx_request",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [
+                  116,
+                  120,
+                  95,
+                  114,
+                  101,
+                  113
+                ]
+              },
+              {
+                "kind": "account",
+                "path": "guard_config"
+              },
+              {
+                "kind": "account",
+                "path": "guard_config.total_requests",
+                "account": "GuardConfig"
+              }
+            ]
+          }
+        },
+        {
+          "name": "agent",
+          "writable": true,
+          "signer": true
+        },
+        {
+          "name": "system_program",
+          "address": "11111111111111111111111111111111"
+        }
+      ],
+      "args": [
+        {
+          "name": "recipient",
+          "type": "pubkey"
+        },
+        {
+          "name": "lamports",
+          "type": "u64"
+        },
+        {
+          "name": "memo",
+          "type": "string"
+        }
+      ]
+    },
+    {
+      "name": "unlock",
+      "docs": [
+        "Operator can unlock the guard."
+      ],
+      "discriminator": [
+        101,
+        155,
+        40,
+        21,
+        158,
+        189,
+        56,
+        203
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true
+        },
+        {
+          "name": "operator",
+          "signer": true,
+          "relations": [
+            "guard_config"
+          ]
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "update_limits",
+      "docs": [
+        "Update guard configuration limits."
+      ],
+      "discriminator": [
+        89,
+        37,
+        137,
+        60,
+        75,
+        70,
+        48,
+        194
+      ],
+      "accounts": [
+        {
+          "name": "guard_config",
+          "writable": true
+        },
+        {
+          "name": "operator",
+          "signer": true,
+          "relations": [
+            "guard_config"
+          ]
+        }
+      ],
+      "args": [
+        {
+          "name": "max_tx_lamports",
+          "type": "u64"
+        },
+        {
+          "name": "daily_limit_lamports",
+          "type": "u64"
+        }
+      ]
+    }
+  ],
+  "accounts": [
+    {
+      "name": "GuardConfig",
+      "discriminator": [
+        95,
+        175,
+        118,
+        50,
+        193,
+        113,
+        37,
+        250
+      ]
+    },
+    {
+      "name": "TransactionRequest",
+      "discriminator": [
+        80,
+        1,
+        42,
+        244,
+        64,
+        187,
+        242,
+        4
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "AgentIdTooLong",
+      "msg": "Agent ID must be 32 characters or less"
+    },
+    {
+      "code": 6001,
+      "name": "InvalidLimit",
+      "msg": "Limit values must be greater than zero"
+    },
+    {
+      "code": 6002,
+      "name": "AllowlistFull",
+      "msg": "Allowlist is full (max 20 entries)"
+    },
+    {
+      "code": 6003,
+      "name": "MemoTooLong",
+      "msg": "Memo must be 128 characters or less"
+    },
+    {
+      "code": 6004,
+      "name": "CircuitBreakerLocked",
+      "msg": "Circuit breaker is locked — all transactions frozen"
+    },
+    {
+      "code": 6005,
+      "name": "RequestNotPending",
+      "msg": "Transaction request is not in Pending status"
+    },
+    {
+      "code": 6006,
+      "name": "RequestNotApproved",
+      "msg": "Transaction request is not Approved"
+    },
+    {
+      "code": 6007,
+      "name": "NotOracle",
+      "msg": "Signer is not the authorized oracle"
+    }
+  ],
+  "types": [
+    {
+      "name": "GuardConfig",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "operator",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent_id",
+            "type": "string"
+          },
+          {
+            "name": "max_tx_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "daily_limit_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "daily_spent_lamports",
+            "type": "u64"
+          },
+          {
+            "name": "daily_reset_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "circuit_breaker_threshold",
+            "type": "u8"
+          },
+          {
+            "name": "circuit_breaker_window_secs",
+            "type": "i64"
+          },
+          {
+            "name": "blocked_count",
+            "type": "u8"
+          },
+          {
+            "name": "first_block_timestamp",
+            "type": "i64"
+          },
+          {
+            "name": "is_locked",
+            "type": "bool"
+          },
+          {
+            "name": "total_requests",
+            "type": "u64"
+          },
+          {
+            "name": "total_approved",
+            "type": "u64"
+          },
+          {
+            "name": "total_denied",
+            "type": "u64"
+          },
+          {
+            "name": "allowlist",
+            "type": {
+              "vec": "pubkey"
+            }
+          },
+          {
+            "name": "oracle",
+            "type": {
+              "option": "pubkey"
+            }
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    },
+    {
+      "name": "RequestStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "Pending"
+          },
+          {
+            "name": "Approved"
+          },
+          {
+            "name": "Denied"
+          },
+          {
+            "name": "Executed"
+          },
+          {
+            "name": "Expired"
+          }
+        ]
+      }
+    },
+    {
+      "name": "TransactionRequest",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "guard_config",
+            "type": "pubkey"
+          },
+          {
+            "name": "agent",
+            "type": "pubkey"
+          },
+          {
+            "name": "recipient",
+            "type": "pubkey"
+          },
+          {
+            "name": "lamports",
+            "type": "u64"
+          },
+          {
+            "name": "memo",
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "type": {
+              "defined": {
+                "name": "RequestStatus"
+              }
+            }
+          },
+          {
+            "name": "submitted_at",
+            "type": "i64"
+          },
+          {
+            "name": "resolved_at",
+            "type": "i64"
+          },
+          {
+            "name": "deny_reason",
+            "type": "string"
+          },
+          {
+            "name": "bump",
+            "type": "u8"
+          }
+        ]
+      }
+    }
+  ]
+}

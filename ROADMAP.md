@@ -54,12 +54,12 @@ Multi-language coverage: EN, DE, ES, ZH, FR.
 │  ├── Wallet priming detection                               │
 │  └── Multi-language: EN, DE, ES, ZH, FR                    │
 ├─────────────────────────────────────────────────────────────┤
-│  Layer 2: Semantic Classifier          (~1-5ms)    ⚠️ SCAFFOLD│
+│  Layer 2: Semantic Classifier          (~6-23ms)   ✅ DONE  │
 │  ├── Heuristic intent scoring (20 weighted signals)        │
 │  ├── IntentCategory taxonomy (5 categories)                 │
-│  ├── 🔲 ONNX embedding model (all-MiniLM-L6-v2)           │
-│  ├── 🔲 Fine-tuned classifier on CrAIBench + custom data   │
-│  └── 🔲 LLM-as-judge escalation (Ollama on agents-pc)      │
+│  ├── ✅ GPU embedding (all-MiniLM-L6-v2, agents-pc:8810)  │
+│  ├── ✅ LLM-as-judge escalation (Ollama qwen3:8b)          │
+│  └── 🔲 Fine-tuned classifier on CrAIBench + custom data   │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 3: Output Guard                 (~0.5ms)    ✅ DONE  │
 │  ├── Solana/ETH private key detection (base58 + hex)       │
@@ -69,10 +69,10 @@ Multi-language coverage: EN, DE, ES, ZH, FR.
 │  ├── Instruction echo detection                             │
 │  └── Response sanitization & redaction                      │
 ├─────────────────────────────────────────────────────────────┤
-│  Layer 4: Runtime Enforcement                      ⚠️ PARTIAL│
+│  Layer 4: Runtime Enforcement                      ✅ DONE  │
 │  ├── ✅ Response Interceptor (hard block, denial templates) │
 │  ├── ✅ Circuit Breaker (restricted/lockdown/freeze modes)  │
-│  ├── 🔲 Solana Transaction Proxy program (Anchor/Rust)      │
+│  ├── ✅ Solana Transaction Proxy (Anchor, 10 tests)         │
 │  └── 🔲 Multi-sig escalation for high-value operations      │
 ├─────────────────────────────────────────────────────────────┤
 │  Layer 5: Observability & Alerting                 ⚠️ PARTIAL│
@@ -169,10 +169,10 @@ Implemented:
 
 ---
 
-## Layer 4: Runtime Enforcement — ⚠️ PARTIAL (4A done, 4B pending)
+## Layer 4: Runtime Enforcement — ✅ COMPLETE (4A + 4B)
 
-**Status:** Response Interceptor + Circuit Breaker done (10 tests), Solana proxy pending
-**Files:** `src/enforcement/response-interceptor.ts`, `tests/enforcement.test.ts`
+**Status:** Response Interceptor + Circuit Breaker done (10 tests), Solana Transaction Proxy done (10 on-chain tests)
+**Files:** `src/enforcement/response-interceptor.ts`, `tests/enforcement.test.ts`, `src/enforcement/solana/transaction-proxy.ts`, `programs/agentshield-guard/`
 
 ### Part A: Response Interceptor + Circuit Breaker — ✅ DONE
 
@@ -183,25 +183,37 @@ Implemented:
 - Auto-expiry with configurable lockdown duration
 - Manual reset and force-lockdown capabilities
 
-### Part B: Solana Transaction Proxy — 🔲 PENDING
+### Part B: Solana Transaction Proxy — ✅ DONE
 
-**Target environment:** agents-pc (Solana CLI + Anchor)
+**Environment:** agents-pc (Rust 1.94, Solana CLI 3.1.11, Anchor 0.32.1)
+**Program ID:** `gURRDzQGXs7p4DrTt6dXPNFXHdwuK5u7WUHYobHMB1D`
+**On-chain tests:** 10/10 passing (local validator)
 
-Architecture:
-- Anchor program on Solana Devnet → Mainnet
-- Agent submits transaction *requests* to proxy PDA
-- Proxy validates against AgentShield policy (on-chain allowlist + oracle)
-- Only approved transactions forwarded to network
-- Multi-sig escalation for transactions above configurable threshold
-- On-chain circuit breaker mirrors L4A logic
+Architecture implemented:
+- Anchor program `agentshield-guard` with PDA-based transaction queue
+- `GuardConfig` PDA per agent: operator, limits, allowlist, oracle, circuit breaker state
+- `TransactionRequest` PDA per request: recipient, amount, memo, status lifecycle
+- Auto-approve: within limits AND (allowlisted OR no oracle) → immediate approval
+- Oracle workflow: non-allowlisted recipients → pending → oracle approve/deny
+- On-chain circuit breaker: configurable threshold + window → auto-lockdown
+- Force-lock/unlock by operator for emergencies
+- Daily spending limit with automatic 24h reset
+- TypeScript SDK client for ElizaOS plugin integration (`transaction-proxy.ts`)
 
-Development plan:
-1. Install Solana CLI + Anchor on agents-pc
-2. Scaffold Anchor program `agentshield-guard`
-3. Implement PDA-based transaction queue
-4. Add policy oracle for off-chain AgentShield integration
-5. Deploy to Devnet, integration test with ElizaOS agent
-6. Audit + Mainnet deployment
+Instructions (9 total):
+1. `initialize_guard` — Create guard config for an agent
+2. `set_oracle` — Set off-chain policy oracle address
+3. `add_to_allowlist` / `remove_from_allowlist` — Manage trusted recipients
+4. `submit_request` — Agent submits a transfer request
+5. `oracle_approve` / `oracle_deny` — Oracle resolves pending requests
+6. `execute_transfer` — Execute approved SOL transfer
+7. `force_lock` / `unlock` — Emergency circuit breaker control
+8. `update_limits` — Change per-tx and daily limits
+
+Remaining:
+- 🔲 Devnet deployment (airdrop faucet currently rate-limited)
+- 🔲 Mainnet audit + deployment
+- 🔲 Multi-sig escalation for high-value operations
 
 ---
 
@@ -254,11 +266,12 @@ Total additional VRAM: ~0.5GB → well within budget.
 ✅ Week 2:     Layer 4A (Response Interceptor + Circuit Breaker) — DONE
 ✅ Week 2:     Layer 5 core (Merkle Audit + Alert Manager) — DONE
 ✅ Week 2:     Layer 2 scaffold (heuristic classifier) — DONE
-── Week 3:     L2 ONNX model on agents-pc (embedding + training)
-── Week 3-4:   L4B Solana Transaction Proxy (Anchor program)
+✅ Week 3:     L2 GPU classifier on agents-pc (embedding + LLM-as-judge) — DONE
+✅ Week 3:     L4B Solana Transaction Proxy (Anchor, 10 on-chain tests) — DONE
 ── Week 4:     L5 dashboard + Merkle anchoring on Solana
+── Week 4:     Devnet deployment (pending airdrop)
 ── Week 5:     Red-teaming + adversarial dataset expansion
-── Week 6:     Devnet integration test + grant application
+── Week 6:     Mainnet audit + grant application
 ```
 
 ## Versioning Plan
@@ -266,14 +279,14 @@ Total additional VRAM: ~0.5GB → well within budget.
 | Version | Layers | Milestone | Status |
 |---------|--------|-----------|--------|
 | v2.0.0-alpha | L1 (partial) | Regex patterns, unit tests | ✅ Done |
-| v2.0.0-beta | L0–L5 (scaffolds) | All layers implemented, 196 tests | ✅ **Current** |
-| v2.0.0-rc1 | L0–L5 + ONNX + L4B | ML classifier, Solana proxy | 🔲 Next |
+| v2.0.0-beta | L0–L5 (scaffolds) | All layers implemented, 196 tests | ✅ Done |
+| v2.0.0-rc1 | L0–L5 + GPU classifier + L4B | ML classifier, Solana proxy, 206 tests | ✅ **Current** |
 | v2.0.0 | Full production | Red-teamed, audited, Mainnet | 🔲 Planned |
 | v2.1.0 | + advanced ML | Fine-tuned classifier, anomaly trends | 🔲 Future |
 
 ## Testing Strategy
 
-196 tests across 10 test files:
+196 TypeScript unit tests + 10 on-chain Anchor tests = 206 total:
 
 | Test File | Tests | Layer |
 |-----------|-------|-------|
@@ -287,6 +300,7 @@ Total additional VRAM: ~0.5GB → well within budget.
 | enforcement.test.ts | 10 | L4A |
 | semantic-classifier.test.ts | 8 | L2 |
 | merkle-audit.test.ts | 8 | L5 |
+| agentshield-guard.ts (Anchor) | 10 | L4B |
 
 ## Red Team Protocol
 
