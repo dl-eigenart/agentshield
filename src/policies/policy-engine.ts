@@ -12,6 +12,7 @@
 
 import { MemoryGuard } from '../guards/memory-guard.js';
 import { TransactionGuard } from '../guards/transaction-guard.js';
+import { InputNormalizer } from '../normalizers/input-normalizer.js';
 import type {
   AgentShieldPolicy,
   MemoryEntry,
@@ -66,11 +67,13 @@ export class PolicyEngine {
   private policy: AgentShieldPolicy;
   private memoryGuard: MemoryGuard;
   private transactionGuard: TransactionGuard;
+  private normalizer: InputNormalizer;
 
   constructor(policy?: AgentShieldPolicy | string) {
     this.policy = this.loadPolicy(policy);
     this.memoryGuard = new MemoryGuard(this.policy.memoryPolicies);
     this.transactionGuard = new TransactionGuard(this.policy.transactionPolicies);
+    this.normalizer = new InputNormalizer({ enableLeetspeak: true });
   }
 
   /**
@@ -79,7 +82,35 @@ export class PolicyEngine {
    */
   validateMemory(entry: MemoryEntry): GuardResult {
     const start = performance.now();
-    const result = this.memoryGuard.validate(entry);
+
+    // ── Layer 0: Input Normalization ──
+    const norm = this.normalizer.normalize(entry.content);
+
+    // Validate the normalized text
+    const normalizedEntry: MemoryEntry = {
+      ...entry,
+      content: norm.normalized,
+    };
+    const result = this.memoryGuard.validate(normalizedEntry);
+
+    // Also scan any decoded payloads (Base64, hex, URL-encoded, etc.)
+    for (const payload of norm.decodedPayloads) {
+      const payloadEntry: MemoryEntry = {
+        ...entry,
+        content: payload.decoded,
+        source: 'external' as const,
+      };
+      const payloadResult = this.memoryGuard.validate(payloadEntry);
+      for (const threat of payloadResult.threats) {
+        // Mark threats from decoded payloads with higher severity
+        threat.severity = Math.min(5, threat.severity + 1);
+        threat.matchedPattern = `[${payload.encoding}] ${threat.matchedPattern}`;
+        result.threats.push(threat);
+      }
+      if (!payloadResult.isSafe) {
+        result.isSafe = false;
+      }
+    }
 
     const evaluations: PolicyEvaluation[] = result.threats.map(threat => ({
       ruleId: threat.matchedPattern,
@@ -88,6 +119,17 @@ export class PolicyEngine {
       confidence: threat.severity / 5,
       timestamp: Date.now(),
     }));
+
+    // Flag normalization itself as suspicious if significant changes were made
+    if (norm.wasModified && norm.transformations.includes('confusables')) {
+      evaluations.push({
+        ruleId: 'normalizer:confusable_detected',
+        decision: 'allow', // Warning only, not a block
+        reason: `Input contained confusable characters (transforms: ${norm.transformations.join(', ')})`,
+        confidence: 0.6,
+        timestamp: Date.now(),
+      });
+    }
 
     // Add a passing evaluation if no threats
     if (evaluations.length === 0) {
@@ -149,6 +191,14 @@ export class PolicyEngine {
     this.policy = newPolicy;
     this.memoryGuard = new MemoryGuard(newPolicy.memoryPolicies);
     this.transactionGuard = new TransactionGuard(newPolicy.transactionPolicies);
+    this.normalizer = new InputNormalizer({ enableLeetspeak: true });
+  }
+
+  /**
+   * Expose normalizer for direct testing.
+   */
+  getNormalizer(): InputNormalizer {
+    return this.normalizer;
   }
 
   // ─── Policy Loading ─────────────────────────────────────────

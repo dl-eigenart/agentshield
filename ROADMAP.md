@@ -1,0 +1,311 @@
+# AgentShield v2 — Production Readiness Roadmap
+
+**Status:** Active Development — all six layers implemented, hardening phase
+**Last Updated:** 2026-03-24
+**Maintainer:** Daniel Leonforte / Eigenart Filmproduktion
+**Repository:** plugin-agentshield
+
+---
+
+## Current State (v2.0.0-beta)
+
+AgentShield provides a six-layer defense architecture for ElizaOS v2 agents on Solana.
+196 unit tests pass across 10 test files. All six layers implemented and functional.
+5/5 CrAIBench attack vectors detected. 0 false positives on benign messages.
+Multi-language coverage: EN, DE, ES, ZH, FR.
+
+**Resolved Weaknesses:**
+
+- ~~Unicode homoglyph bypass~~ → Fixed by L0 NFKC + homoglyph mapping
+- ~~Base64/encoded payloads not decoded~~ → Fixed by L0 encoding detection
+- ~~No output guard~~ → Fixed by L3 Output Guard (key leakage, seed phrases, JWT, post-block compliance)
+- ~~No real blocking~~ → Fixed by L4A Response Interceptor + Circuit Breaker
+- ~~Single-language patterns~~ → Fixed by L1 Pattern Registry (5 languages)
+
+**Remaining Weaknesses:**
+
+- Semantic rephrasing bypasses regex patterns → Requires L2 ONNX model (heuristic scaffold in place)
+- Open-source patterns readable by attackers → Mitigated by L2 embedding classifier
+- No on-chain transaction proxy → Requires L4B Solana program
+- No real-time metrics dashboard → Requires L5 dashboard build
+- Merkle roots not yet anchored on Solana → Requires Solana integration
+
+---
+
+## Architecture: Six-Layer Defense
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Incoming Message                                           │
+├─────────────────────────────────────────────────────────────┤
+│  Layer 0: Input Normalization          (~0.1ms)    ✅ DONE  │
+│  ├── Unicode NFKC normalization                             │
+│  ├── Homoglyph → ASCII mapping (460+ confusables)          │
+│  ├── Zero-width character stripping                         │
+│  ├── Base64 / hex / URL-encoded payload decode              │
+│  ├── Leetspeak normalization (Solana address-aware)         │
+│  └── Whitespace & control character cleanup                 │
+├─────────────────────────────────────────────────────────────┤
+│  Layer 1: Fast Pattern Guard           (~0.05ms)   ✅ DONE  │
+│  ├── Configurable Pattern Registry (JSON, CRUD, versioned) │
+│  ├── 36 built-in patterns across 5 languages               │
+│  ├── Financial instruction detection                        │
+│  ├── System override / identity hijack detection            │
+│  ├── Wallet priming detection                               │
+│  └── Multi-language: EN, DE, ES, ZH, FR                    │
+├─────────────────────────────────────────────────────────────┤
+│  Layer 2: Semantic Classifier          (~1-5ms)    ⚠️ SCAFFOLD│
+│  ├── Heuristic intent scoring (20 weighted signals)        │
+│  ├── IntentCategory taxonomy (5 categories)                 │
+│  ├── 🔲 ONNX embedding model (all-MiniLM-L6-v2)           │
+│  ├── 🔲 Fine-tuned classifier on CrAIBench + custom data   │
+│  └── 🔲 LLM-as-judge escalation (Ollama on agents-pc)      │
+├─────────────────────────────────────────────────────────────┤
+│  Layer 3: Output Guard                 (~0.5ms)    ✅ DONE  │
+│  ├── Solana/ETH private key detection (base58 + hex)       │
+│  ├── BIP39 seed phrase detection (200-word sample)          │
+│  ├── JWT/API key leak detection                             │
+│  ├── Post-block compliance checking                         │
+│  ├── Instruction echo detection                             │
+│  └── Response sanitization & redaction                      │
+├─────────────────────────────────────────────────────────────┤
+│  Layer 4: Runtime Enforcement                      ⚠️ PARTIAL│
+│  ├── ✅ Response Interceptor (hard block, denial templates) │
+│  ├── ✅ Circuit Breaker (restricted/lockdown/freeze modes)  │
+│  ├── 🔲 Solana Transaction Proxy program (Anchor/Rust)      │
+│  └── 🔲 Multi-sig escalation for high-value operations      │
+├─────────────────────────────────────────────────────────────┤
+│  Layer 5: Observability & Alerting                 ⚠️ PARTIAL│
+│  ├── ✅ Merkle Audit Trail (SHA-256, checkpoints)           │
+│  ├── ✅ Alert Manager (Slack/Telegram/Discord/webhook)      │
+│  ├── 🔲 Real-time metrics dashboard (web UI)                │
+│  ├── 🔲 Merkle root anchoring on Solana                     │
+│  └── 🔲 Anomaly trend analysis with auto-escalation         │
+└─────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Layer 0: Input Normalization — ✅ COMPLETE
+
+**Status:** Done — 36 tests passing
+**Files:** `src/normalizers/input-normalizer.ts`, `tests/input-normalizer.test.ts`
+
+Implemented pipeline:
+
+1. **Unicode NFKC Normalization** — Cyrillic "а" → Latin "a", fullwidth → ASCII
+2. **Confusable/Homoglyph Map** — 460+ mappings covering Cyrillic, Greek, mathematical symbols
+3. **Zero-Width & Invisible Character Stripping** — U+200B, U+200C/D, U+FEFF, U+00AD, Cf category
+4. **Encoding Detection & Decode** — Base64 (≥20 chars), hex (0x prefix), URL-encoded (2+ sequences), Unicode escapes
+5. **Leetspeak Normalization** — 1→i, 0→o, @→a, 3→e, $→s; Solana address detection (32-44 base58 chars) to skip
+6. **Control Character & Whitespace Normalization** — Collapse whitespace, strip control chars
+
+All 4 original bypass vectors resolved at L0+L1 level.
+
+---
+
+## Layer 1: Fast Pattern Guard — ✅ COMPLETE
+
+**Status:** Done — 24 tests passing (+ 45 memory-guard tests)
+**Files:** `src/config/pattern-registry.ts`, `src/guards/memory-guard.ts`, `tests/pattern-registry.test.ts`
+
+Implemented:
+
+1. **Configurable Pattern Registry** — PatternDefinition interface, JSON serialization, CRUD (add/remove/update), immutable operations with version bumping, hot-reload ready
+2. **36 Built-in Patterns** — 16 EN, 7 DE, 5 ES, 4 ZH, 4 FR covering override, injection, financial, exfiltration, wallet_priming, social_engineering categories
+3. **Wallet Priming Detection** — "remember this wallet", "use this address", address assignment patterns
+4. **Language Filtering** — Match with `{ language: 'en' }` option to restrict to specific language
+
+---
+
+## Layer 2: Semantic Classifier — ⚠️ SCAFFOLD (heuristic only)
+
+**Status:** Heuristic scoring implemented (8 tests passing), ML models pending
+**Files:** `src/classifiers/semantic-classifier.ts`, `tests/semantic-classifier.test.ts`
+
+### What's Done
+
+- IntentCategory taxonomy: benign, injection, exfiltration, social_engineering, financial_manipulation
+- 20 weighted keyword-based intent signals for heuristic scoring
+- Three-tier architecture with placeholder hooks for ONNX + LLM-as-judge
+- SemanticClassifierConfig with enableEmbedding, modelPath, enableLLMJudge, llmEndpoint
+- Full GuardResult integration
+
+### What's Needed — agents-pc (RTX 5090)
+
+**Phase 2A: ONNX Embedding Model**
+- Download `all-MiniLM-L6-v2` ONNX model (~22MB) on agents-pc
+- Build curated attack embedding set from CrAIBench + Tensor Trust
+- Expose as HTTP inference endpoint on agents-pc (FastAPI + onnxruntime-gpu)
+- Plugin calls endpoint for cosine similarity classification (~20ms GPU inference)
+- Fallback: heuristic scoring if endpoint unreachable
+
+**Phase 2B: Fine-Tuned Classifier**
+- Curate 500-1000 labeled examples (attack/benign with subcategories)
+- Fine-tune on agents-pc GPU (DistilBERT or MiniLM, ~30min training)
+- Export to ONNX, deploy as replacement for embedding similarity
+- Target: >95% detection, <1% false positive on DeFi conversations
+
+**Phase 2C: LLM-as-Judge Escalation**
+- Route ambiguous messages (heuristic score 0.4-0.7) to Ollama qwen3:8b on agents-pc
+- Structured prompt: classify intent, return JSON with confidence
+- ~500ms latency, only for edge cases that pass L0+L1
+
+---
+
+## Layer 3: Output Guard — ✅ COMPLETE
+
+**Status:** Done — 15 tests passing
+**Files:** `src/guards/output-guard.ts`, `tests/output-guard.test.ts`
+
+Implemented:
+
+1. **Cryptographic Material Detection** — Solana private keys (64-88 base58), ETH keys (0x+64hex), key byte arrays ([32-64 ints]), JWT tokens
+2. **BIP39 Seed Phrase Detection** — 200-word sample set, 10+ consecutive matches triggers alert
+3. **Post-Block Compliance** — Checks if response echoes blocked transfer amounts/tokens/addresses
+4. **Instruction Echo Detection** — "updating wallet to", "I'll send/transfer", "granting access", "disabling security"
+5. **Unauthorized TX Confirmation** — Transaction confirmation language after recent blocked input
+6. **Response Sanitization** — Redacts keys/JWTs, replaces entire response on compliance violation
+
+---
+
+## Layer 4: Runtime Enforcement — ⚠️ PARTIAL (4A done, 4B pending)
+
+**Status:** Response Interceptor + Circuit Breaker done (10 tests), Solana proxy pending
+**Files:** `src/enforcement/response-interceptor.ts`, `tests/enforcement.test.ts`
+
+### Part A: Response Interceptor + Circuit Breaker — ✅ DONE
+
+- Hard block: replaces response with policy denial + audit reference ID
+- Three enforcement modes: monitor, enforce, lockdown
+- Circuit Breaker: restricted mode (3 blocks/60s), lockdown (5 blocks/5min)
+- Freeze-on-critical: key_leakage or exfiltration → immediate lockdown
+- Auto-expiry with configurable lockdown duration
+- Manual reset and force-lockdown capabilities
+
+### Part B: Solana Transaction Proxy — 🔲 PENDING
+
+**Target environment:** agents-pc (Solana CLI + Anchor)
+
+Architecture:
+- Anchor program on Solana Devnet → Mainnet
+- Agent submits transaction *requests* to proxy PDA
+- Proxy validates against AgentShield policy (on-chain allowlist + oracle)
+- Only approved transactions forwarded to network
+- Multi-sig escalation for transactions above configurable threshold
+- On-chain circuit breaker mirrors L4A logic
+
+Development plan:
+1. Install Solana CLI + Anchor on agents-pc
+2. Scaffold Anchor program `agentshield-guard`
+3. Implement PDA-based transaction queue
+4. Add policy oracle for off-chain AgentShield integration
+5. Deploy to Devnet, integration test with ElizaOS agent
+6. Audit + Mainnet deployment
+
+---
+
+## Layer 5: Observability & Alerting — ⚠️ PARTIAL (core done, dashboard pending)
+
+**Status:** Merkle Audit + Alert Manager done (8 tests), dashboard pending
+**Files:** `src/logging/merkle-audit.ts`, `src/logging/alert-manager.ts`, `tests/merkle-audit.test.ts`
+
+### What's Done
+
+- **Merkle Audit Trail** — SHA-256 leaf hashing, tree construction, periodic checkpoints, tamper-proof verification, deterministic roots
+- **Alert Manager** — Slack Block Kit, Telegram Markdown, Discord embeds, generic webhook; severity-based routing; batch digests for medium/low severity; configurable channels
+
+### What's Needed
+
+- **Metrics Dashboard** — Real-time web UI (messages/min, block rate, threat distribution, latency percentiles)
+- **Merkle Root Anchoring** — Periodic Solana transaction to store Merkle roots on-chain (ties into L4B)
+- **Anomaly Trend Analysis** — Time-series escalation detection, coordinated attack detection
+
+---
+
+## Infrastructure: agents-pc (JARVIS Server)
+
+```
+Host:  eigenart@100.102.59.70 (Tailscale)
+GPU:   RTX 5090 32GB (Blackwell, sm_120, CUDA 12.8)
+OS:    Ubuntu 24, Python 3.13, PyTorch 2.8.0+cu128
+VRAM:  ~23.5GB free (8.5GB used by Ollama + Qwen3-TTS + ComfyUI)
+LLM:   Ollama qwen3:8b (keep_alive=10m)
+```
+
+**Planned AgentShield services on agents-pc:**
+
+| Service | Purpose | VRAM | Port |
+|---------|---------|------|------|
+| AgentShield Classifier API | ONNX embedding inference | ~0.5GB | 8810 |
+| LLM-as-Judge | Ollama qwen3:8b (shared) | 0 (shared) | 11434 |
+| Solana Validator (test) | Devnet RPC for L4B testing | 0 | 8899 |
+
+Total additional VRAM: ~0.5GB → well within budget.
+
+---
+
+## Revised Implementation Timeline
+
+```
+✅ Week 1:     Layer 0 (Input Normalization) — DONE
+✅ Week 1-2:   Layer 1 (Pattern Registry, multi-language) — DONE
+✅ Week 2:     Layer 3 (Output Guard) — DONE
+✅ Week 2:     Layer 4A (Response Interceptor + Circuit Breaker) — DONE
+✅ Week 2:     Layer 5 core (Merkle Audit + Alert Manager) — DONE
+✅ Week 2:     Layer 2 scaffold (heuristic classifier) — DONE
+── Week 3:     L2 ONNX model on agents-pc (embedding + training)
+── Week 3-4:   L4B Solana Transaction Proxy (Anchor program)
+── Week 4:     L5 dashboard + Merkle anchoring on Solana
+── Week 5:     Red-teaming + adversarial dataset expansion
+── Week 6:     Devnet integration test + grant application
+```
+
+## Versioning Plan
+
+| Version | Layers | Milestone | Status |
+|---------|--------|-----------|--------|
+| v2.0.0-alpha | L1 (partial) | Regex patterns, unit tests | ✅ Done |
+| v2.0.0-beta | L0–L5 (scaffolds) | All layers implemented, 196 tests | ✅ **Current** |
+| v2.0.0-rc1 | L0–L5 + ONNX + L4B | ML classifier, Solana proxy | 🔲 Next |
+| v2.0.0 | Full production | Red-teamed, audited, Mainnet | 🔲 Planned |
+| v2.1.0 | + advanced ML | Fine-tuned classifier, anomaly trends | 🔲 Future |
+
+## Testing Strategy
+
+196 tests across 10 test files:
+
+| Test File | Tests | Layer |
+|-----------|-------|-------|
+| input-normalizer.test.ts | 36 | L0 |
+| memory-guard.test.ts | 45 | L0+L1 |
+| pattern-registry.test.ts | 24 | L1 |
+| transaction-guard.test.ts | 19 | L1 |
+| anomaly-detector.test.ts | 18 | L1 |
+| policy-engine.test.ts | 13 | L1 |
+| output-guard.test.ts | 15 | L3 |
+| enforcement.test.ts | 10 | L4A |
+| semantic-classifier.test.ts | 8 | L2 |
+| merkle-audit.test.ts | 8 | L5 |
+
+## Red Team Protocol
+
+Before each version bump, run a structured red-team exercise:
+
+1. Generate 100 novel attack prompts using an adversarial LLM
+2. Include multi-language, multi-turn, encoded, and social engineering variants
+3. Measure: detection rate, false positive rate, latency impact
+4. Any bypass at severity ≥ 4 blocks the release
+5. Publish results transparently in the release notes
+
+---
+
+## References
+
+- CrAIBench (Princeton, 2025): arxiv.org/html/2503.16248v3
+- Unicode Confusables: unicode.org/reports/tr39
+- Tensor Trust Dataset: tensortrust.ai
+- ElizaOS v2 Plugin Architecture: elizaos.ai/docs
+- Solana Program Library: github.com/solana-labs/solana-program-library
+- ONNX Runtime: onnxruntime.ai
+- Sentence Transformers: sbert.net

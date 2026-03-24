@@ -44,7 +44,7 @@ const DEFAULT_INJECTION_PATTERNS: Array<{
   },
   // System prompt override
   {
-    pattern: /(?:ignore|override|forget|disregard)\s+(?:previous|prior|all|your)\s+(?:instructions|rules|policies|guidelines)/i,
+    pattern: /(?:ignore|override|forget|disregard)\s+(?:(?:all|previous|prior|above|earlier|your)\s+){1,3}(?:instructions|rules|policies|guidelines)/i,
     type: 'override',
     severity: 5,
     description: 'System prompt override attempt',

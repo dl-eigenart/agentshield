@@ -23,6 +23,12 @@ import type { Plugin, Action, Provider, IAgentRuntime, ActionResult } from '@eli
 import { PolicyEngine, DEFAULT_POLICY } from './policies/policy-engine.js';
 import { AnomalyDetector } from './monitors/anomaly-detector.js';
 import { AuditLogger } from './logging/audit-logger.js';
+import { OutputGuard } from './guards/output-guard.js';
+import { ResponseInterceptor } from './enforcement/response-interceptor.js';
+import { SemanticClassifier } from './classifiers/semantic-classifier.js';
+import { MerkleAuditTrail } from './logging/merkle-audit.js';
+import { AlertManager } from './logging/alert-manager.js';
+import { PatternRegistry } from './config/pattern-registry.js';
 import type {
   AgentShieldConfig,
   MemoryEntry,
@@ -43,11 +49,27 @@ const DEFAULT_CONFIG: AgentShieldConfig = {
 };
 
 // ─── Plugin State (initialized on plugin.init) ──────────────────
+// Exported via getPluginState() for external integration and testing.
 
 let policyEngine: PolicyEngine;
 let anomalyDetector: AnomalyDetector;
 let auditLogger: AuditLogger;
+let outputGuard: OutputGuard;
+let responseInterceptor: ResponseInterceptor;
+let semanticClassifier: SemanticClassifier;
+let merkleAudit: MerkleAuditTrail;
+let alertManager: AlertManager;
+let patternRegistry: PatternRegistry;
 let config: AgentShieldConfig;
+
+/** Access all initialized plugin components (available after plugin.init). */
+export function getPluginState() {
+  return {
+    policyEngine, anomalyDetector, auditLogger, outputGuard,
+    responseInterceptor, semanticClassifier, merkleAudit, alertManager,
+    patternRegistry, config,
+  };
+}
 
 // ─── Security Provider ──────────────────────────────────────────
 // Injects security context into every agent interaction
@@ -416,33 +438,76 @@ export const agentShieldPlugin: Plugin = {
   init: async (pluginConfig: any, runtime: IAgentRuntime) => {
     config = { ...DEFAULT_CONFIG, ...pluginConfig };
 
-    // Initialize core components
+    // Initialize core components (L0-L1)
     policyEngine = new PolicyEngine(config.policy);
+    patternRegistry = new PatternRegistry();
     anomalyDetector = new AnomalyDetector();
     auditLogger = new AuditLogger({
       auditLogTarget: config.auditLogTarget,
       auditLogPath: config.auditLogPath,
     });
 
+    // Initialize Layer 2: Semantic Classifier
+    semanticClassifier = new SemanticClassifier();
+
+    // Initialize Layer 3: Output Guard
+    outputGuard = new OutputGuard();
+
+    // Initialize Layer 4A: Response Interceptor + Circuit Breaker
+    responseInterceptor = new ResponseInterceptor();
+
+    // Initialize Layer 5: Observability
+    merkleAudit = new MerkleAuditTrail({ checkpointInterval: 100 });
+    alertManager = new AlertManager({
+      channels: config.alertWebhookUrl ? [{
+        type: 'webhook', url: config.alertWebhookUrl, minSeverity: 'high',
+      }] : [],
+      enabled: !!config.alertWebhookUrl,
+    });
+
     // Log initialization
+    const agentId = runtime.agentId || 'unknown';
     auditLogger.log({
       type: 'plugin_initialized',
-      agentId: runtime.agentId || 'unknown',
+      agentId,
       metadata: {
         policyVersion: policyEngine.getPolicy().version,
         auditTarget: config.auditLogTarget,
         anomalyDetection: config.enableAnomalyDetection,
+        layers: ['L0:normalizer', 'L1:patterns', 'L2:semantic', 'L3:output', 'L4:enforcement', 'L5:observability'],
+        patternStats: patternRegistry.getStats(),
       },
     });
+    merkleAudit.addEvent(JSON.stringify({ type: 'plugin_initialized', agentId, timestamp: Date.now() }));
 
-    console.log(`[AgentShield] Initialized v2.0.0 | Policy: ${policyEngine.getPolicy().version} | Agent: ${runtime.agentId}`);
+    console.log(`[AgentShield] Initialized v2.0.0 | Policy: ${policyEngine.getPolicy().version} | Patterns: ${patternRegistry.getStats().total} | Agent: ${agentId}`);
   },
 };
 
 // ─── Exports ────────────────────────────────────────────────────
 
+// Layer 0: Input Normalization
+export { InputNormalizer } from './normalizers/input-normalizer.js';
+// Layer 1: Pattern Guard
+export { PatternRegistry, BUILTIN_PATTERNS } from './config/pattern-registry.js';
+export type { PatternDefinition, PatternRegistryConfig } from './config/pattern-registry.js';
 export { PolicyEngine, DEFAULT_POLICY } from './policies/policy-engine.js';
 export { MemoryGuard } from './guards/memory-guard.js';
+// Layer 2: Semantic Classifier
+export { SemanticClassifier } from './classifiers/semantic-classifier.js';
+export type { IntentCategory, ClassificationResult } from './classifiers/semantic-classifier.js';
+// Layer 3: Output Guard
+export { OutputGuard } from './guards/output-guard.js';
+export type { OutputScanResult, OutputThreat, BlockedInputContext } from './guards/output-guard.js';
+// Layer 4: Runtime Enforcement
+export { ResponseInterceptor } from './enforcement/response-interceptor.js';
+export type { EnforcementMode, CircuitBreakerConfig, InterceptResult } from './enforcement/response-interceptor.js';
+// Layer 5: Observability
+export { MerkleAuditTrail } from './logging/merkle-audit.js';
+export type { AuditCheckpoint } from './logging/merkle-audit.js';
+export { AlertManager } from './logging/alert-manager.js';
+export type { AlertPayload, AlertConfig } from './logging/alert-manager.js';
+// Core
 export { TransactionGuard } from './guards/transaction-guard.js';
 export { AnomalyDetector } from './monitors/anomaly-detector.js';
 export { AuditLogger } from './logging/audit-logger.js';
