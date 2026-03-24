@@ -75,11 +75,11 @@ Multi-language coverage: EN, DE, ES, ZH, FR.
 │  ├── ✅ Solana Transaction Proxy (Anchor, 10 tests)         │
 │  └── 🔲 Multi-sig escalation for high-value operations      │
 ├─────────────────────────────────────────────────────────────┤
-│  Layer 5: Observability & Alerting                 ⚠️ PARTIAL│
+│  Layer 5: Observability & Alerting                 ✅ DONE  │
 │  ├── ✅ Merkle Audit Trail (SHA-256, checkpoints)           │
 │  ├── ✅ Alert Manager (Slack/Telegram/Discord/webhook)      │
-│  ├── 🔲 Real-time metrics dashboard (web UI)                │
-│  ├── 🔲 Merkle root anchoring on Solana                     │
+│  ├── ✅ Metrics dashboard (Chart.js, live updates)          │
+│  ├── ✅ Merkle root anchoring on Solana (Memo v2)           │
 │  └── 🔲 Anomaly trend analysis with auto-escalation         │
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -217,21 +217,34 @@ Remaining:
 
 ---
 
-## Layer 5: Observability & Alerting — ⚠️ PARTIAL (core done, dashboard pending)
+## Layer 5: Observability & Alerting — ✅ COMPLETE
 
-**Status:** Merkle Audit + Alert Manager done (8 tests), dashboard pending
-**Files:** `src/logging/merkle-audit.ts`, `src/logging/alert-manager.ts`, `tests/merkle-audit.test.ts`
+**Status:** Merkle Audit + Alert Manager + Dashboard + Merkle Anchoring all done
+**Files:** `src/logging/merkle-audit.ts`, `src/logging/alert-manager.ts`, `src/logging/dashboard.html`, `src/logging/merkle-anchor.ts`, `tests/merkle-audit.test.ts`
 
 ### What's Done
 
 - **Merkle Audit Trail** — SHA-256 leaf hashing, tree construction, periodic checkpoints, tamper-proof verification, deterministic roots
 - **Alert Manager** — Slack Block Kit, Telegram Markdown, Discord embeds, generic webhook; severity-based routing; batch digests for medium/low severity; configurable channels
+- **Metrics Dashboard** — Interactive HTML/Chart.js dashboard with:
+  - 6 KPI cards (total scans, blocked, block rate, latency, circuit breaker state, merkle events)
+  - Threat timeline (line chart, hourly buckets)
+  - Threat category distribution (doughnut)
+  - Layer-wise detection counts (bar chart with L0-L4 color-coded)
+  - Latency histogram (ms distribution)
+  - Merkle audit trail visualization (current root, last checkpoint, Solana TX)
+  - Recent events table (time, layer, category, severity, input preview, action, latency)
+  - Time range + layer filters, live event simulation (5s interval)
+- **Merkle Root Anchoring on Solana** — `MerkleAnchor` service:
+  - Writes Merkle roots to Solana via Memo Program v2 (~0.000005 SOL/anchor)
+  - Auto-anchor with configurable interval + minimum events threshold
+  - On-chain verification: fetch TX memo, compare root hash
+  - Anchor history tracking with cost accounting
+  - Dashboard stats integration (total anchors, last root, last signature, cost)
 
-### What's Needed
+### Remaining
 
-- **Metrics Dashboard** — Real-time web UI (messages/min, block rate, threat distribution, latency percentiles)
-- **Merkle Root Anchoring** — Periodic Solana transaction to store Merkle roots on-chain (ties into L4B)
-- **Anomaly Trend Analysis** — Time-series escalation detection, coordinated attack detection
+- 🔲 Anomaly trend analysis (time-series escalation detection, coordinated attack detection)
 
 ---
 
@@ -268,9 +281,10 @@ Total additional VRAM: ~0.5GB → well within budget.
 ✅ Week 2:     Layer 2 scaffold (heuristic classifier) — DONE
 ✅ Week 3:     L2 GPU classifier on agents-pc (embedding + LLM-as-judge) — DONE
 ✅ Week 3:     L4B Solana Transaction Proxy (Anchor, 10 on-chain tests) — DONE
-── Week 4:     L5 dashboard + Merkle anchoring on Solana
+✅ Week 3:     L5 dashboard (Chart.js, 6 KPIs, 4 charts, live updates) — DONE
+✅ Week 3:     L5 Merkle anchoring on Solana (Memo v2 program) — DONE
 ── Week 4:     Devnet deployment (pending airdrop)
-── Week 5:     Red-teaming + adversarial dataset expansion
+── Week 4-5:   Red-teaming + adversarial dataset expansion
 ── Week 6:     Mainnet audit + grant application
 ```
 
