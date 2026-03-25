@@ -13,17 +13,11 @@
  * Program ID: gURRDzQGXs7p4DrTt6dXPNFXHdwuK5u7WUHYobHMB1D
  */
 
+// @ts-ignore — @solana/web3.js is an optional peer dependency
 import {
   Connection,
   PublicKey,
-  Keypair,
-  Transaction,
-  SystemProgram,
-  LAMPORTS_PER_SOL,
-  TransactionInstruction,
-  sendAndConfirmTransaction,
 } from '@solana/web3.js';
-import * as borsh from 'borsh';
 
 // ─── Constants ─────────────────────────────────────────────────
 

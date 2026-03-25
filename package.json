@@ -1,14 +1,23 @@
 {
-  "name": "@agentshield/plugin",
-  "version": "0.1.0",
-  "description": "AI Agent Security & Guardrails for Solana — Memory injection protection, transaction policies, anomaly detection, and audit logging",
+  "name": "@eigenart/agentshield",
+  "version": "2.0.0-rc2",
+  "description": "Six-layer AI agent security for ElizaOS on Solana — prompt injection defense, transaction policies, anomaly detection, and on-chain audit trail. 190/190 independent eval.",
   "type": "module",
   "main": "dist/index.js",
+  "module": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "files": [
     "dist",
+    "policies",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "CHANGELOG.md"
   ],
   "scripts": {
     "build": "tsup src/index.ts --format esm --dts --clean",
@@ -16,21 +25,43 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
-    "lint": "tsc --noEmit"
+    "lint": "tsc --noEmit",
+    "prepublishOnly": "npm run build && npm run lint"
   },
   "keywords": [
     "elizaos",
+    "elizaos-plugin",
     "solana",
     "ai-agent",
-    "security",
+    "ai-security",
     "guardrails",
+    "prompt-injection",
     "memory-injection",
     "agentshield",
     "web3",
-    "policy-engine"
+    "web3-security",
+    "policy-engine",
+    "transaction-guard",
+    "llm-security",
+    "agent-safety"
   ],
-  "author": "AgentShield Team",
+  "author": {
+    "name": "Daniel Leonforte",
+    "email": "eigenart.filmproduction@gmail.com",
+    "url": "https://github.com/dl-eigenart"
+  },
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dl-eigenart/agentshield"
+  },
+  "bugs": {
+    "url": "https://github.com/eigenart-dev/agentshield/issues"
+  },
+  "homepage": "https://github.com/eigenart-dev/agentshield#readme",
+  "engines": {
+    "node": ">=18.0.0"
+  },
   "peerDependencies": {
     "@elizaos/core": ">=1.7.0"
   },

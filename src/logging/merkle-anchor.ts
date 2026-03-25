@@ -15,6 +15,7 @@
  * lightweight, low-cost anchoring (~0.000005 SOL per anchor).
  */
 
+// @ts-ignore — @solana/web3.js is an optional peer dependency
 import {
   Connection,
   PublicKey,
@@ -152,7 +153,7 @@ export class MerkleAnchor {
       }
 
       // Extract memo from transaction log messages
-      const memoLog = tx.meta?.logMessages?.find(m => m.includes(ANCHOR_PREFIX));
+      const memoLog = tx.meta?.logMessages?.find((m: string) => m.includes(ANCHOR_PREFIX));
       if (!memoLog) {
         return { valid: false, onChainMemo: null, reason: 'No AgentShield memo found in transaction' };
       }
@@ -160,12 +161,6 @@ export class MerkleAnchor {
       // Parse the memo data from the log
       const memoMatch = memoLog.match(/Program log: Memo \(len \d+\): "(.*?)"/);
       const onChainMemo = memoMatch ? memoMatch[1] : memoLog;
-
-      const expectedMemo = this.encodeMemo({
-        merkleRoot: record.merkleRoot,
-        eventCount: record.eventCount,
-        timestamp: record.anchoredAt,
-      });
 
       const valid = onChainMemo.includes(record.merkleRoot);
       return {

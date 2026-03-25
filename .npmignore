@@ -1,0 +1,25 @@
+# Source code (dist is published, not src)
+src/
+tests/
+programs/
+services/
+
+# Build config
+tsconfig.json
+tsconfig.tsbuildinfo
+tsup.config.ts
+vitest.config.ts
+
+# Dev files
+.git/
+.gitignore
+.env
+.env.*
+*.log
+.DS_Store
+bun.lockb
+coverage/
+node_modules/
+
+# Project docs (not needed on npm)
+ROADMAP.md
