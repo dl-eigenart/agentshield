@@ -56,7 +56,7 @@ Incoming Message
   │   36 regex patterns across 5 languages
   │
   ├─ L2: Semantic Classifier         (~1.5ms)
-  │   Fine-tuned MiniLM embeddings → Binary classification head
+  │   Semantic classifier → Binary classification head
   │   + language-detection routing + LLM-as-judge escalation
   │
   ├─ L3: Output Guard               (~0.5ms)

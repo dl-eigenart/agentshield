@@ -57,7 +57,7 @@ Multi-language coverage: EN, DE, ES, ZH, FR.
 │  Layer 2: Semantic Classifier          (~6-23ms)   ✅ DONE  │
 │  ├── Heuristic intent scoring (20 weighted signals)        │
 │  ├── IntentCategory taxonomy (5 categories)                 │
-│  ├── ✅ GPU embedding (all-MiniLM-L6-v2, agents-pc:8810)  │
+│  ├── ✅ GPU semantic classifier (agents-pc:8810)  │
 │  ├── ✅ LLM-as-judge escalation (Ollama qwen3:8b)          │
 │  └── 🔲 Fine-tuned classifier on CrAIBench + custom data   │
 ├─────────────────────────────────────────────────────────────┤
@@ -134,7 +134,7 @@ Implemented:
 ### What's Needed — agents-pc (RTX 5090)
 
 **Phase 2A: ONNX Embedding Model**
-- Download `all-MiniLM-L6-v2` ONNX model (~22MB) on agents-pc
+- Deploy semantic classifier model on agents-pc
 - Build curated attack embedding set from CrAIBench + Tensor Trust
 - Expose as HTTP inference endpoint on agents-pc (FastAPI + onnxruntime-gpu)
 - Plugin calls endpoint for cosine similarity classification (~20ms GPU inference)
@@ -142,7 +142,7 @@ Implemented:
 
 **Phase 2B: Fine-Tuned Classifier**
 - Curate 500-1000 labeled examples (attack/benign with subcategories)
-- Fine-tune on agents-pc GPU (DistilBERT or MiniLM, ~30min training)
+- Fine-tune semantic classifier on agents-pc GPU (~30min training)
 - Export to ONNX, deploy as replacement for embedding similarity
 - Target: >95% detection, <1% false positive on DeFi conversations
 

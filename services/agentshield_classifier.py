@@ -3,7 +3,7 @@
 AgentShield L2 Semantic Classifier Service
 ===========================================
 FastAPI service running on agents-pc (RTX 5090) providing:
-- Sentence embedding via all-MiniLM-L6-v2 (GPU-accelerated)
+- Semantic embedding classifier (GPU-accelerated)
 - Cosine similarity against curated attack embedding set
 - Intent classification with confidence scores
 - LLM-as-judge escalation via local Ollama for ambiguous cases
