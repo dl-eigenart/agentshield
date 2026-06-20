@@ -1,7 +1,7 @@
 {
   "name": "@eigenart/agentshield",
-  "version": "2.0.0-rc2",
-  "description": "Six-layer AI agent security for ElizaOS on Solana — prompt injection defense, transaction policies, anomaly detection, and on-chain audit trail. 190/190 independent eval.",
+  "version": "2.0.0",
+  "description": "Six-layer AI agent security for ElizaOS on Solana — prompt injection defense, transaction policies, anomaly detection, and on-chain audit trail. Part of the AgentShield platform (agentshield.pro).",
   "type": "module",
   "main": "dist/index.js",
   "module": "dist/index.js",
@@ -56,9 +56,9 @@
     "url": "https://github.com/dl-eigenart/agentshield"
   },
   "bugs": {
-    "url": "https://github.com/eigenart-dev/agentshield/issues"
+    "url": "https://github.com/dl-eigenart/agentshield/issues"
   },
-  "homepage": "https://github.com/eigenart-dev/agentshield#readme",
+  "homepage": "https://agentshield.pro",
   "engines": {
     "node": ">=18.0.0"
   },

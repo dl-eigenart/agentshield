@@ -2,7 +2,7 @@
 
 Six-layer defense system that protects autonomous AI agents from prompt injection, memory manipulation, unauthorized transactions, and credential exfiltration.
 
-**Independent evaluation: 190/190 (100%) — zero bypasses, zero false positives.**
+> **Part of the AgentShield platform** — runtime verification for AI agents. The full benchmark methodology, per-sample false-positive / false-negative lists, and reproduction scripts are at [agentshield.pro/benchmark](https://agentshield.pro/benchmark). This package is the ElizaOS / Solana implementation of the same six-layer defense architecture.
 
 ## Why AgentShield?
 
@@ -13,7 +13,7 @@ AgentShield intercepts every incoming message and every outgoing transaction in 
 ## Install
 
 ```bash
-npm install @eigentart/agentshield
+npm install @eigenart/agentshield
 ```
 
 ```typescript
@@ -69,21 +69,21 @@ Incoming Message
       Merkle audit trail (on-chain anchoring) + alerts + dashboard
 ```
 
-## Evaluation Results
+## Evaluation
 
-Independent evaluation with 190 samples (zero overlap with training data):
+The AgentShield platform benchmark — same six-layer methodology, evaluated on the Python implementation — is fully open and reproducible:
 
-| Metric | Score |
-|---|---|
-| Attack detection | 90/90 (100%) |
-| Benign accuracy | 50/50 (100%) |
-| Adversarial-benign accuracy | 50/50 (100%) |
-| Overall | 190/190 (100%) |
-| Median latency | 1.5ms |
-| Bypasses | 0 |
-| False positives | 0 |
+- **5,972 samples across 6 public prompt-injection datasets** (gandalf, safeguard, deepset, spml, jackhhao, pint)
+- **F1 0.956 headline** (5 datasets excluding jackhhao role-play, 4,666 samples) — FPR 1.5%
+- **F1 0.921 full set** (all 6 datasets, 5,972 samples) — FPR 13.2%
+- **Latency p50 2.44 ms / p95 3.80 ms** end-to-end
+- Per-sample false-positive / false-negative lists published in the repo
 
-Attack categories tested: prompt injection, social engineering, financial manipulation, exfiltration, wallet priming, multi-language variants, encoding-based evasion, compound multi-part attacks.
+The full benchmark methodology, reproduction scripts, and per-sample failure analysis are at [agentshield.pro/benchmark](https://agentshield.pro/benchmark).
+
+> **Note on this package specifically:** This ElizaOS / Solana implementation shares the architecture but is a separate TypeScript codebase. Solana-specific re-evaluation against the same benchmark, plus Web3-relevant attack patterns (memory injection, transaction priming, wallet-targeting payloads), is in progress and will be published as part of a future release.
+
+Previous releases of this package contained an internal "190/190" evaluation claim that has been retracted. The platform benchmark above is the canonical reference.
 
 ## Custom Policies
 
@@ -116,6 +116,7 @@ Attack categories tested: prompt injection, social engineering, financial manipu
 For maximum accuracy, AgentShield can use a fine-tuned GPU classifier running as a sidecar service. Without it, the plugin falls back to pattern matching + heuristic scoring (still effective, but fewer layers).
 
 The classifier service requires:
+
 - NVIDIA GPU with CUDA support
 - Python 3.10+ with PyTorch and sentence-transformers
 - ~500MB VRAM
@@ -171,6 +172,12 @@ AgentShield includes a Solana program (Anchor/Rust) that enforces transaction po
 - Oracle integration for human-in-the-loop approval
 
 Program ID (Devnet): `gURRDzQGXs7p4DrTt6dXPNFXHdwuK5u7WUHYobHMB1D`
+
+## Related
+
+- **AgentShield platform** (Python + MCP, general AI-agent runtime verification): [agentshield.pro](https://agentshield.pro)
+- **Public benchmark + reproduction**: [agentshield.pro/benchmark](https://agentshield.pro/benchmark)
+- **Platform repo**: [dl-eigenart/agentshield-platform](https://github.com/dl-eigenart/agentshield-platform)
 
 ## License
 
